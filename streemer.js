@@ -51,7 +51,7 @@ Streemer.prototype.grow = function() {
 
     for (let node of this.nodes)
         for (let type of this.types)
-            if (this.match(node, type))
+            if (this.match(type, node))
                 this.node(type, node);
 }
 
