@@ -2,15 +2,22 @@
 
 
 
-function Streemer() {
+function Streemer(offer, connect, upload) {
 
     this.types = [];
     this.nodes = [];
 
-    this.root = this.node({
-        client: {},
-        server: {}
-    });
+    this.root = {
+        type: {
+            offer: offer,
+            connect: connect,
+            upload: upload
+        },
+        server: null,
+        clients: [],
+        inbox: [],
+        offer: offer
+    };
 }
 
 
@@ -73,7 +80,7 @@ Streemer.prototype.msg = function(sender, data, target) {
 
 
 
-Streemer.prototype.handleMessages = function() {
+Streemer.prototype.feed = function() {
 
     for (let node in this.nodes) {
         let msg = node.inbox.shift();
@@ -85,6 +92,26 @@ Streemer.prototype.handleMessages = function() {
         }
     }
 }
+
+
+
+Streemer.prototype.run = function(interval) {
+
+    let start = Date.now();
+
+    this.grow();
+    this.feed();
+
+    if (arguments.length) setTimeout(
+        () => this.run(interval),
+        Math.max(0, interval - (Date.now() - start))
+    );
+}
+
+
+
+
+
 
 
 
@@ -123,3 +150,4 @@ s.type({
 
 
 
+// zero
