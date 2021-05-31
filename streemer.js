@@ -53,18 +53,38 @@ Streemer.prototype.grow = function() {
 Streemer.prototype.match = function(type, node) {
 
     for (let key in type.clientside.context)
-        if (!type.clientside.context[key](node.serverside.offer[key])) return false;
+        if (!type.clientside.context[key](node.offer[key]))
+            return false;
     
     return true;
 }
 
 
 
-Streemer.prototype.post = function(node, data) {
+Streemer.prototype.msg = function(sender, data, target) {
 
-    node.inbox.push(data);
+    let receiver = target || sender.server;
+    receiver.inbox.push({
+        sender: sender,
+        data: data,
+        isUpload: receiver === sender.server
+    });
 }
 
+
+
+Streemer.prototype.handleMessages = function() {
+
+    for (let node in this.nodes) {
+        let msg = node.inbox.shift();
+        if (msg) {
+            if (msg.isUpload)
+                node.type.serverside.upload(msg);
+            else
+                node.type.clientside.download(msg);
+        }
+    }
+}
 
 
 
