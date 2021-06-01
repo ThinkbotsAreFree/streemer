@@ -2,29 +2,71 @@
 
 
 
-function Streemer(offer, connect, upload) {
+function Streemer(type) {
 
     this.types = [];
-    this.nodes = [];
 
     this.root = {
+        id: this.id("Root"),
         type: {
-            offer: offer,
-            connect: connect,
-            upload: upload
+            policy: Streemer.prototype.policy.once,
+            serverside: {
+                offer: type.offer,
+                connect: type.connect,
+                upload: type.upload
+            }
         },
         server: null,
         clients: [],
+        types: [],
         inbox: [],
-        offer: offer
+        offer: type.offer
     };
+    
+    this.nodes = [this.root];
 }
+
+
+
+Streemer.prototype.id = function() {
+    var id = 0n;
+    return function(prefix) {
+        return prefix + (id++);
+    }
+}()
 
 
 
 Streemer.prototype.type = function(structure) {
 
-    this.types.push(structure);
+    this.types.push(Object.assign({ id: this.id("Type") }, structure));
+}
+
+
+
+Streemer.prototype.policy = {};
+
+
+
+Streemer.prototype.policy.each = function(type, server) {
+
+    this.node(type, server);
+}
+
+
+
+Streemer.prototype.policy.once = function(type, server) {
+
+    if (!server.types.includes(type))
+        this.node(type, server);
+}
+
+
+
+Streemer.prototype.policy.keep = function(type, server) {
+
+    if (!server.clients.map(client => client.type).includes(type))
+        this.node(type, server);
 }
 
 
@@ -32,6 +74,7 @@ Streemer.prototype.type = function(structure) {
 Streemer.prototype.node = function(type, server) {
 
     let node = {
+        id: this.id("Node"),
         type: type,
         server: server,
         clients: [],
@@ -42,6 +85,7 @@ Streemer.prototype.node = function(type, server) {
     server.type.serverside.connect(node, server);
 
     server.clients.push(node);
+    server.types.push(type);
     this.nodes.push(node);
 }
 
@@ -52,7 +96,7 @@ Streemer.prototype.grow = function() {
     for (let node of this.nodes)
         for (let type of this.types)
             if (this.match(type, node))
-                this.node(type, node);
+                type.policy(type, node);
 }
 
 
@@ -82,13 +126,13 @@ Streemer.prototype.msg = function(sender, data, target) {
 
 Streemer.prototype.feed = function() {
 
-    for (let node in this.nodes) {
+    for (let node of this.nodes) {
         let msg = node.inbox.shift();
         if (msg) {
             if (msg.isUpload)
-                node.type.serverside.upload(msg);
+                node.type.serverside.upload(msg, node);
             else
-                node.type.clientside.download(msg);
+                node.type.clientside.download(msg, node);
         }
     }
 }
@@ -118,18 +162,33 @@ Streemer.prototype.run = function(interval) {
 
 
 
-var s = new Streemer();
+var s = new Streemer({
+    offer: {
+        who: "root",
+        what: "foo"
+    },
+    connect: (client, node) => {
+        console.log("[root connecting client]", client.id);
+    },
+    upload: (data, node) => {
+        console.log("[root uploading]", data);
+    }
+});
 
 
 
 s.type({
     clientside: {
+        policy: s.policy.once,
         context: {
-            t: v => v == "ok",
-            x: x => x > 10
+            who: who => who == "root"
         },
-        init: (server, node) => { },
-        download: (data) => { }
+        init: (server, node) => {
+            console.log("[client init to server]", server.id);
+        },
+        download: (data, node) => {
+            console.log("[client download]", data);
+        }
     },
     serverside: {
         offer: {
@@ -138,12 +197,12 @@ s.type({
             z: 3
         },
         connect: (client, node) => { },
-        upload: (data) => { }
+        upload: (data, node) => { }
     }
 });
 
 
-
+s.run(1000);
 
 
 
