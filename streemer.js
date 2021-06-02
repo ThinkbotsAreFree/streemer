@@ -48,16 +48,17 @@ Streemer.prototype.policy = {};
 
 
 
-Streemer.prototype.policy.each = function(type, server) {
+Streemer.prototype.policy.every = function(type, server) {
 
-    this.node(type, server);
+    if (this.match(type, server))
+        this.node(type, server);
 }
 
 
 
 Streemer.prototype.policy.once = function(type, server) {
 
-    if (!server.types.includes(type))
+    if (this.match(type, server) && !server.types.includes(type))
         this.node(type, server);
 }
 
@@ -65,8 +66,30 @@ Streemer.prototype.policy.once = function(type, server) {
 
 Streemer.prototype.policy.keep = function(type, server) {
 
-    if (!server.clients.map(client => client.type).includes(type))
+    if (this.match(type, server) && !server.clients.map(client => client.type).includes(type))
         this.node(type, server);
+}
+
+
+
+Streemer.prototype.policy.check = function(type, server) {
+
+    if (this.match(type, server)) {
+        if (!server.clients.map(client => client.type).includes(type))
+            this.node(type, server);
+    } else {
+        for (let client of server.clients)
+            if (client.type === type)
+                this.remove(client);
+    }
+}
+
+
+
+Streemer.prototype.remove = function(node) {
+
+    for (let client of node.clients) this.remove(client);
+    node.garbage = true;
 }
 
 
@@ -95,8 +118,7 @@ Streemer.prototype.grow = function() {
 
     for (let node of this.nodes)
         for (let type of this.types)
-            if (this.match(type, node))
-                type.clientside.policy.call(this, type, node);
+            type.clientside.policy.call(this, type, node);
     this.nodes = this.nodes.concat(this.pending);
     this.pending = [];
 }
@@ -147,6 +169,7 @@ Streemer.prototype.run = function(interval) {
 
     this.grow();
     this.feed();
+    this.nodes = this.nodes.filter(node => !node.garbage);
 
     if (arguments.length) setTimeout(
         () => this.run(interval),
