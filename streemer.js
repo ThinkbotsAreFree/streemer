@@ -48,7 +48,7 @@ Streemer.prototype.policy = {};
 
 
 
-Streemer.prototype.policy.every = function(type, server) {
+Streemer.prototype.policy.clone = function(type, server) {
 
     if (this.match(type, server))
         this.node(type, server);
@@ -88,8 +88,8 @@ Streemer.prototype.policy.check = function(type, server) {
 
 Streemer.prototype.remove = function(node) {
 
-    for (let client of node.clients) this.remove(client);
     node.garbage = true;
+    for (let client of node.clients) this.remove(client);
 }
 
 
@@ -105,11 +105,11 @@ Streemer.prototype.node = function(type, server) {
         offer: Object.assign({}, type.serverside.offer)
     };
     node.type.clientside.init(server, node);
-    server.type.serverside.connect(node, server);
-
-    server.clients.push(node);
-    server.types.push(type);
-    this.pending.push(node);
+    if (server.type.serverside.connect(node, server)) {
+        server.clients.push(node);
+        server.types.push(type);
+        this.pending.push(node);
+    }
 }
 
 
@@ -167,8 +167,10 @@ Streemer.prototype.run = function(interval) {
 
     let start = Date.now();
 
-    this.grow();
+    for (let node of this.nodes)
+        if (node.type.tick) node.type.tick.call(this, node);
     this.feed();
+    this.grow();
     this.nodes = this.nodes.filter(node => !node.garbage);
 
     if (arguments.length) setTimeout(
@@ -194,6 +196,7 @@ var s = new Streemer({
     },
     connect: (client, node) => {
         console.log("[root connecting client]", client.id);
+        return true;
     },
     upload: (data, node) => {
         console.log("[root uploading]", data);
@@ -215,6 +218,7 @@ s.type({
             console.log("[client download]", data);
         }
     },
+    tick: node => { },
     serverside: {
         offer: {
             x: 1,
