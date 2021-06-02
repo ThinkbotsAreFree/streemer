@@ -1,6 +1,166 @@
 
 
 
+function Vector(object) {
+
+    this.vector = Object.assign({}, object)
+}
+
+
+
+Vector.prototype.clone = function () {
+
+    return new Vector(this.toObject());
+}
+
+
+
+Vector.prototype.toObject = function () {
+
+    return Object.assign({}, this.vector);
+}
+
+
+
+Vector.prototype.getComponents = function () {
+
+    return Object.keys(this.vector);
+}
+
+
+
+Vector.prototype.get = function (component) {
+
+    return this.vector[component];
+}
+
+
+
+Vector.prototype.set = function (component, value) {
+
+    this.vector[component] = value;
+}
+
+
+
+Vector.prototype.isEqual = function (vector) {
+
+    const keys = this.getComponents();
+    const vectorKeys = vector.getComponents();
+
+    if (keys.length !== vectorKeys.length) return false;
+
+    for (let i = 0; i < keys.length; i += 1) {
+
+        const k = keys[i];
+        if (this.vector[k] !== vector.vector[k]) return false;
+    }
+    return true;
+}
+
+
+
+Vector.prototype.getDistance = function (vector) {
+
+    const tmpVector = this.clone().subtract(vector);
+    let d = 0;
+
+    tmpVector.getComponents().forEach((k) => {
+
+        d += tmpVector.vector[k] * tmpVector.vector[k];
+    });
+
+    return Math.sqrt(d);
+}
+
+
+
+Vector.prototype.getLength = function () {
+
+    let l = 0;
+    this.getComponents().forEach((k) => {
+        l += this.vector[k] * this.vector[k];
+    });
+    return Math.sqrt(l);
+}
+
+
+
+Vector.prototype.getDotProduct = function (vector) {
+
+    let dotProduct = 0;
+    this.getComponents().forEach((k) => {
+        if (vector.vector[k] !== undefined) {
+            dotProduct += this.vector[k] * vector.vector[k];
+        }
+    });
+    return dotProduct;
+}
+
+
+
+Vector.prototype.getCosineSimilarity = function (vector) {
+
+    return this.getDotProduct(vector) / (this.getLength() * vector.getLength());
+}
+
+
+
+Vector.prototype.normalize = function () {
+
+    const l = this.getLength();
+    return this.divide(l);
+}
+
+
+
+Vector.prototype.add = function (vector) {
+
+    vector.getComponents().forEach((k) => {
+        if (this.vector[k] !== undefined) {
+            this.vector[k] += vector.vector[k];
+        } else {
+            this.vector[k] = vector.vector[k];
+        }
+    });
+    return this;
+}
+
+
+
+Vector.prototype.subtract = function (vector) {
+
+    vector.getComponents().forEach((k) => {
+        if (this.vector[k] !== undefined) {
+            this.vector[k] -= vector.vector[k];
+        } else {
+            this.vector[k] = -vector.vector[k];
+        }
+    });
+    return this;
+}
+
+
+
+Vector.prototype.multiply = function (scalar) {
+
+    this.getComponents().forEach((k) => {
+        this.vector[k] *= scalar;
+    });
+    return this;
+}
+
+
+
+Vector.prototype.divide = function (scalar) {
+
+    this.getComponents().forEach((k) => {
+        this.vector[k] /= scalar;
+    });
+    return this;
+}
+
+
 
 function Streemer(type) {
 
@@ -21,23 +181,30 @@ function Streemer(type) {
         inbox: [],
         offer: type.offer
     };
-    
+
     this.nodes = [this.root];
     this.pending = [];
 }
 
 
 
-Streemer.prototype.id = function() {
+Streemer.prototype.V = function (object) {
+
+    return new Vector(object);
+}
+
+
+
+Streemer.prototype.id = function () {
     var id = 0n;
-    return function(prefix) {
+    return function (prefix) {
         return prefix + (id++);
     }
 }()
 
 
 
-Streemer.prototype.type = function(structure) {
+Streemer.prototype.type = function (structure) {
 
     this.types.push(Object.assign({ id: this.id("Type") }, structure));
 }
@@ -48,7 +215,7 @@ Streemer.prototype.policy = {};
 
 
 
-Streemer.prototype.policy.clone = function(type, server) {
+Streemer.prototype.policy.clone = function (type, server) {
 
     if (this.match(type, server))
         this.node(type, server);
@@ -56,7 +223,7 @@ Streemer.prototype.policy.clone = function(type, server) {
 
 
 
-Streemer.prototype.policy.once = function(type, server) {
+Streemer.prototype.policy.once = function (type, server) {
 
     if (this.match(type, server) && !server.types.includes(type))
         this.node(type, server);
@@ -64,7 +231,7 @@ Streemer.prototype.policy.once = function(type, server) {
 
 
 
-Streemer.prototype.policy.keep = function(type, server) {
+Streemer.prototype.policy.keep = function (type, server) {
 
     if (this.match(type, server) && !server.clients.map(client => client.type).includes(type))
         this.node(type, server);
@@ -72,7 +239,7 @@ Streemer.prototype.policy.keep = function(type, server) {
 
 
 
-Streemer.prototype.policy.check = function(type, server) {
+Streemer.prototype.policy.check = function (type, server) {
 
     if (this.match(type, server)) {
         if (!server.clients.map(client => client.type).includes(type))
@@ -86,7 +253,7 @@ Streemer.prototype.policy.check = function(type, server) {
 
 
 
-Streemer.prototype.remove = function(node) {
+Streemer.prototype.remove = function (node) {
 
     node.garbage = true;
     for (let client of node.clients) this.remove(client);
@@ -94,7 +261,7 @@ Streemer.prototype.remove = function(node) {
 
 
 
-Streemer.prototype.node = function(type, server) {
+Streemer.prototype.node = function (type, server) {
 
     let node = {
         id: this.id("Node"),
@@ -114,7 +281,7 @@ Streemer.prototype.node = function(type, server) {
 
 
 
-Streemer.prototype.grow = function() {
+Streemer.prototype.grow = function () {
 
     for (let node of this.nodes)
         for (let type of this.types)
@@ -125,18 +292,18 @@ Streemer.prototype.grow = function() {
 
 
 
-Streemer.prototype.match = function(type, node) {
+Streemer.prototype.match = function (type, node) {
 
     for (let key in type.clientside.context)
         if (!type.clientside.context[key](node.offer[key]))
             return false;
-    
+
     return true;
 }
 
 
 
-Streemer.prototype.msg = function(sender, data, target) {
+Streemer.prototype.msg = function (sender, data, target) {
 
     let receiver = target || sender.server;
     receiver.inbox.push({
@@ -148,7 +315,7 @@ Streemer.prototype.msg = function(sender, data, target) {
 
 
 
-Streemer.prototype.feed = function() {
+Streemer.prototype.feed = function () {
 
     for (let node of this.nodes) {
         let msg = node.inbox.shift();
@@ -163,7 +330,7 @@ Streemer.prototype.feed = function() {
 
 
 
-Streemer.prototype.run = function(interval) {
+Streemer.prototype.run = function (interval) {
 
     let start = Date.now();
 
