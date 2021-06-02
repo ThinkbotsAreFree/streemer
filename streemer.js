@@ -9,7 +9,6 @@ function Streemer(type) {
     this.root = {
         id: this.id("Root"),
         type: {
-            policy: Streemer.prototype.policy.once,
             serverside: {
                 offer: type.offer,
                 connect: type.connect,
@@ -24,6 +23,7 @@ function Streemer(type) {
     };
     
     this.nodes = [this.root];
+    this.pending = [];
 }
 
 
@@ -86,7 +86,7 @@ Streemer.prototype.node = function(type, server) {
 
     server.clients.push(node);
     server.types.push(type);
-    this.nodes.push(node);
+    this.pending.push(node);
 }
 
 
@@ -96,7 +96,9 @@ Streemer.prototype.grow = function() {
     for (let node of this.nodes)
         for (let type of this.types)
             if (this.match(type, node))
-                type.policy(type, node);
+                type.clientside.policy.call(this, type, node);
+    this.nodes = this.nodes.concat(this.pending);
+    this.pending = [];
 }
 
 
@@ -179,7 +181,7 @@ var s = new Streemer({
 
 s.type({
     clientside: {
-        policy: s.policy.once,
+        policy: s.policy.keep,
         context: {
             who: who => who == "root"
         },
