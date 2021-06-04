@@ -1,26 +1,45 @@
 
 
 
-function VT(object, children, parent) {
+function log(label, content) {
 
-    this.vector = Object.assign({}, object);
-    
-    this.parent = parent;
-    this.children = children || [];
+    process.stdout.write('\x1b[45m| '+label+' |\x1b[0m ');
+    console.dir(content, { depth: null })
+}
+
+
+
+function VT(object, origin) {
+
+    this.vector = [];
+
+    for (let key in object) this.vector.push({
+        dimension: key,
+        value: object[key],
+        origin: origin
+    });
+
+    return this;
 }
 
 
 
 VT.prototype.clone = function () {
 
-    return new VT(this.toObject());
+    let vt = new VT({});
+    vt.vector = JSON.parse(JSON.stringify(this.vector));
+    return vt;
 }
 
 
 
 VT.prototype.toObject = function () {
 
-    return Object.assign({}, this.vector);
+    return {
+        vector: this.vector,
+        parent: this.parent,
+        children: this.children
+    };
 }
 
 
@@ -191,7 +210,7 @@ function Streemer(type) {
 
 
 
-Streemer.prototype.V = function (object) {
+Streemer.prototype.VT = function (object) {
 
     return new VT(object);
 }
@@ -358,7 +377,60 @@ Streemer.prototype.run = function (interval) {
 
 
 
+let sentence = new VT({
+    sentence: 1,
+    affirmative: 1
+});
 
+
+let role = new VT({
+    role: 1,
+    subject: 1
+}, sentence);
+
+
+let boy = new VT({
+    human: 1,
+    young: 1
+}, role);
+
+
+
+log("boy", boy);
+
+
+
+
+
+
+
+
+
+/*
+
+let testVT = new VT(
+    {
+        vector: { role: 1, sujet: 1 },
+        children: [
+            {
+                vector: { nom: 1, rose: 1 }
+            },
+            {
+                vector: { déterminant: 1, la: 1 }
+            }
+        ]
+    }
+);
+
+
+
+log("testVT", testVT);
+*/
+
+
+
+
+/*
 var s = new Streemer({
     offer: {
         who: "root",
@@ -402,7 +474,7 @@ s.type({
 
 
 s.run(1000);
-
+*/
 
 
 
