@@ -1,49 +1,52 @@
 
 
 
-function Vector(object) {
+function VT(object, children, parent) {
 
-    this.vector = Object.assign({}, object)
+    this.vector = Object.assign({}, object);
+    
+    this.parent = parent;
+    this.children = children || [];
 }
 
 
 
-Vector.prototype.clone = function () {
+VT.prototype.clone = function () {
 
-    return new Vector(this.toObject());
+    return new VT(this.toObject());
 }
 
 
 
-Vector.prototype.toObject = function () {
+VT.prototype.toObject = function () {
 
     return Object.assign({}, this.vector);
 }
 
 
 
-Vector.prototype.getComponents = function () {
+VT.prototype.getComponents = function () {
 
     return Object.keys(this.vector);
 }
 
 
 
-Vector.prototype.get = function (component) {
+VT.prototype.get = function (component) {
 
     return this.vector[component];
 }
 
 
 
-Vector.prototype.set = function (component, value) {
+VT.prototype.set = function (component, value) {
 
     this.vector[component] = value;
 }
 
 
 
-Vector.prototype.isEqual = function (vector) {
+VT.prototype.isEqual = function (vector) {
 
     const keys = this.getComponents();
     const vectorKeys = vector.getComponents();
@@ -60,14 +63,14 @@ Vector.prototype.isEqual = function (vector) {
 
 
 
-Vector.prototype.getDistance = function (vector) {
+VT.prototype.getDistance = function (vector) {
 
-    const tmpVector = this.clone().subtract(vector);
+    const tmpVT = this.clone().subtract(vector);
     let d = 0;
 
-    tmpVector.getComponents().forEach((k) => {
+    tmpVT.getComponents().forEach((k) => {
 
-        d += tmpVector.vector[k] * tmpVector.vector[k];
+        d += tmpVT.vector[k] * tmpVT.vector[k];
     });
 
     return Math.sqrt(d);
@@ -75,7 +78,7 @@ Vector.prototype.getDistance = function (vector) {
 
 
 
-Vector.prototype.getLength = function () {
+VT.prototype.getLength = function () {
 
     let l = 0;
     this.getComponents().forEach((k) => {
@@ -86,7 +89,7 @@ Vector.prototype.getLength = function () {
 
 
 
-Vector.prototype.getDotProduct = function (vector) {
+VT.prototype.getDotProduct = function (vector) {
 
     let dotProduct = 0;
     this.getComponents().forEach((k) => {
@@ -99,14 +102,14 @@ Vector.prototype.getDotProduct = function (vector) {
 
 
 
-Vector.prototype.getCosineSimilarity = function (vector) {
+VT.prototype.getCosineSimilarity = function (vector) {
 
     return this.getDotProduct(vector) / (this.getLength() * vector.getLength());
 }
 
 
 
-Vector.prototype.normalize = function () {
+VT.prototype.normalize = function () {
 
     const l = this.getLength();
     return this.divide(l);
@@ -114,7 +117,7 @@ Vector.prototype.normalize = function () {
 
 
 
-Vector.prototype.add = function (vector) {
+VT.prototype.add = function (vector) {
 
     vector.getComponents().forEach((k) => {
         if (this.vector[k] !== undefined) {
@@ -128,7 +131,7 @@ Vector.prototype.add = function (vector) {
 
 
 
-Vector.prototype.subtract = function (vector) {
+VT.prototype.subtract = function (vector) {
 
     vector.getComponents().forEach((k) => {
         if (this.vector[k] !== undefined) {
@@ -142,7 +145,7 @@ Vector.prototype.subtract = function (vector) {
 
 
 
-Vector.prototype.multiply = function (scalar) {
+VT.prototype.multiply = function (scalar) {
 
     this.getComponents().forEach((k) => {
         this.vector[k] *= scalar;
@@ -152,7 +155,7 @@ Vector.prototype.multiply = function (scalar) {
 
 
 
-Vector.prototype.divide = function (scalar) {
+VT.prototype.divide = function (scalar) {
 
     this.getComponents().forEach((k) => {
         this.vector[k] /= scalar;
@@ -190,7 +193,7 @@ function Streemer(type) {
 
 Streemer.prototype.V = function (object) {
 
-    return new Vector(object);
+    return new VT(object);
 }
 
 
